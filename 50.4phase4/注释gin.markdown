@@ -32,3 +32,8 @@ Gin c.Abort() 函数深度解析笔记
 - 答：【不会】。Abort 之后的代码依然会继续执行，除非你手动 return。
 
 
+
+
+1. "Running in 'debug' mode..." (运行在调试模式)
+翻译：Gin 提醒你：“兄弟，我现在是‘话痨’模式，性能还没开到最高。如果你以后上线了（生产环境），记得切换到 release 模式，那样我会跑得飞快且闭嘴。”
+如何消除：在 main.go 的 main() 函数第一行写 gin.SetMode(gin.ReleaseMode)。不过现在咱们写代码，保持 debug 模式是好事，日志详尽。

@@ -22,22 +22,6 @@ var (
 	ErrRetryNextModel = errors.New("试是下一个厂家")
 )
 
-// 跨域中间件
-func CorsMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 全局通用跨域
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "Content-Type")
-
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
-
 // 拿到api尝试一次流式传输
 func tryStreamOnce(w http.ResponseWriter, req *http.Request, client http.Client, keypool *KeyPool) error {
 	// 1.1
