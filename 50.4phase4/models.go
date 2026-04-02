@@ -18,6 +18,7 @@ type Message struct {
 // 大模型发回来的请求体
 type ChatResponse struct {
 	Choices []Choice `json:"choices"`
+	Usage   *Usage
 }
 type Choice struct {
 	Delta Delta `json:"delta"`
@@ -25,13 +26,18 @@ type Choice struct {
 type Delta struct {
 	Content string `json:"content"`
 }
+type Usage struct { // 网关的计费
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
 
 // 数据库用户
 type User struct {
-	ID        uint    `gorm:"primarykey"`
-	Username  string  `gorm:"uniqueIndex;size:50"`
-	Balance   float64 `gorm:"type:decimal(10,4);default:0"`
-	Status    bool    `gorm:"default:1"`
+	ID        uint   `gorm:"primarykey"`
+	Username  string `gorm:"uniqueIndex;size:50"`
+	Balance   int64  `gorm:"type:decimal(10,4);default:0"`
+	Status    int    `gorm:"default:1"`
 	CreatedAt time.Time
 }
 

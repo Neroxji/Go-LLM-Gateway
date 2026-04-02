@@ -30,6 +30,7 @@ func main() {
 
 	// 挂载中间件
 	r.Use(CorsMiddleware())
+	// r.Use(AuthMiddleware())
 
 	// 注册路由
 	r.POST("/api/chat", apiChatHandler(config))
