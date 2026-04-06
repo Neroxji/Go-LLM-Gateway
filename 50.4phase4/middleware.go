@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -36,7 +37,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// 2	token鉴权
 		var token Token
-		result := DB.Where("key=? AND status=?", apiKey, 1).First(&token)
+		result := DB.Where("token_key=? AND status=?", apiKey, 1).First(&token)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			c.AbortWithStatusJSON(401, gin.H{"error": "查不到该apiKey!"})
 			return
@@ -61,6 +62,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 3
 		c.Set("currentToken", token)
 		c.Set("currentUser", user)
+		fmt.Println("已存入user")
 
 		c.Next()
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -41,11 +42,14 @@ func InitDB(dsn string) {
 }
 
 // 扣费函数
-func DeductBalance(userID uint, cost float64) error {
+func DeductBalance(userID uint, cost int64) error {
 
 	// 乐观校验
-	result:=DB.Model(&User{}).Where("id=? AND balance>=?", userID, cost).Update("balance", gorm.Expr("balance-?", cost))
-	if result.RowsAffected==0{
+	result := DB.Model(&User{}).Where("id=? AND balance>=?", userID, cost).Update("balance", gorm.Expr("balance-?", cost))
+	if result.Error != nil { // 数据库本身挂了
+		return fmt.Errorf("数据库执行失败：%w", result.Error)
+	}
+	if result.RowsAffected == 0 {
 		return errors.New("扣费失败：用户不存在或余额不足")
 	}
 	return nil

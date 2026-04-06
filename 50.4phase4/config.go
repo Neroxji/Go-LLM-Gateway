@@ -16,7 +16,7 @@ type Providers struct {
 	Url       string   `json:"url"`
 	Model     string   `json:"model"`
 	Keys      []string `json:"keys"`
-	PricePerK float64  `json:"price_per_k"`
+	PricePerK int64    `json:"price_per_k"`
 	Pool      *KeyPool `json:"-"`
 }
 

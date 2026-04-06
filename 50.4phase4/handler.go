@@ -70,7 +70,7 @@ func tryStreamOnce(w http.ResponseWriter, req *http.Request, client http.Client,
 		}
 
 		s := strings.TrimPrefix(line, "data:")
-		if s == " [DONE]" {
+		if strings.Contains(s, "[DONE]") {
 			return finalUsage, ErrSuccess
 		}
 
@@ -185,13 +185,25 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 					log.Println("请求成功!")
 
 					// 计费并且更新数据库
-					user := c.MustGet("currentUser").(User)
-					cost := float64(usage.TotalTokens) * currentProvider.PricePerK / 1000
-					err:=DeductBalance(user.ID, cost)
-					if err!=nil{
-						log.Printf("用户ID[%d]扣费失败: %v \n", user.ID,err)
-					}else{
-						log.Printf("用户ID[%d]扣费成功: %.4f \n", user.ID,cost)
+					if usage != nil {
+						// 4.1
+						user := c.MustGet("currentUser").(User)
+
+						// 4.2.1
+						cost := (int64(usage.TotalTokens) * currentProvider.PricePerK) / 1000
+						if cost == 0 && usage.TotalTokens > 0 {
+							cost = 1
+						}
+
+						// 4.2.2
+						err := DeductBalance(user.ID, cost)
+						if err != nil {
+							log.Printf("用户ID[%d]扣费失败: %v \n", user.ID, err)
+						} else {
+							log.Printf("用户ID[%d]扣费成功: %d \n", user.ID, cost)
+						}
+					} else {
+						log.Println("usage 为 nil，无法计费，请检查厂商响应格式")
 					}
 					return
 				case ErrRetryNextKey:

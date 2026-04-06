@@ -36,7 +36,7 @@ type Usage struct { // 网关的计费
 type User struct {
 	ID        uint   `gorm:"primarykey"`
 	Username  string `gorm:"uniqueIndex;size:50"`
-	Balance   int64  `gorm:"type:decimal(10,4);default:0"`
+	Balance   int64  `gorm:"type:bigint;default:0"`
 	Status    int    `gorm:"default:1"`
 	CreatedAt time.Time
 }
@@ -46,7 +46,7 @@ type Token struct {
 	ID        uint   `gorm:"primarykey"`
 	UserID    uint   `gorm:"index;not null"`
 	Name      string `gorm:"size:50;default:'默认密钥'"`
-	Key       string `gorm:"uniqueIndex;size:100;not null"`
+	TokenKey  string `gorm:"uniqueIndex;size:100;not null"`
 	Status    int    `gorm:"default:1"`
 	CreatedAt time.Time
 }
