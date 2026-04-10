@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
-	_ "net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,6 +27,11 @@ func main() {
 	// 启动并连接数据库
 	InitDB(config.DSN)
 
+	// 启动日志系统
+	for i := 0; i < 5; i++ {
+		go logworker()
+	}
+
 	// 注册gin引擎
 	r := gin.Default()
 
@@ -36,7 +43,15 @@ func main() {
 	r.POST("/api/chat", apiChatHandler(config))
 
 	// 启动服务
-	log.Println("服务器启动在 :8080...")
-	r.Run(":8080")
+	go func() {
+		log.Println("服务器启动在 :8080...")
+		r.Run(":8080")
+	}()
 
+	// 等关闭
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("检测到退出信号，正在关闭服务...")
+	close(LogChan)
 }
