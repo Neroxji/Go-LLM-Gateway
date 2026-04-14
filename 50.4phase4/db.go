@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -63,13 +64,17 @@ func DeductBalance(userID uint, cost int64) error {
 }
 
 // 日志函数
-func logworker() {
+func logworker(wg *sync.WaitGroup) {
+	// 1
+	defer wg.Done()
+
+	// 2
 	for entry := range LogChan {
-		result:=DB.Create(&entry)
-		if result.Error!=nil{
+		result := DB.Create(&entry)
+		if result.Error != nil {
 			log.Printf("数据库执行失败：%s", result.Error)
 		}
-		if result.RowsAffected==0{
+		if result.RowsAffected == 0 {
 			log.Printf("[%v]日志存入失败", entry.UserID)
 		}
 	}
