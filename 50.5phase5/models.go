@@ -20,20 +20,38 @@ type StreamOptions struct {
 }
 
 // 大模型发回来的请求体
-type ChatResponse struct {
-	Choices []Choice `json:"choices"`
-	Usage   *Usage   `json:"usage"`
+type OpenAIStreamResponse struct {
+	ID                string   `json:"id"`
+	Object            string   `json:"object"`
+	Created           int64    `json:"created"`
+	Model             string   `json:"model"`
+	SystemFingerprint string   `json:"system_fingerprint,omitempty"`
+	Choices           []Choice `json:"choices"`
+	Usage *Usage `json:"usage,omitempty"`
 }
 type Choice struct {
-	Delta Delta `json:"delta"`
+	Index        int     `json:"index"`
+	FinishReason *string `json:"finish_reason,omitempty"`
+	Delta        Delta   `json:"delta"`
 }
 type Delta struct {
-	Content string `json:"content"`
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
 }
-type Usage struct { // 网关的计费
+type Usage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
 	TotalTokens      int `json:"total_tokens"`
+}
+
+// 发给前端的报错(sse流开始时)
+type OpenAIErrorMsg struct {
+    Error struct {
+        Message string `json:"message"`
+        Type    string `json:"type"`
+        Param   string `json:"param,omitempty"`
+        Code    string `json:"code,omitempty"`
+    } `json:"error"`
 }
 
 // 数据库用户

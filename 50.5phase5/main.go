@@ -62,10 +62,10 @@ func main() {
 		}
 	}()
 
-	// 主线程等关闭	 
+	// 主线程等关闭
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM) 
-	<-quit	// 阻塞等待
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit // 阻塞等待
 	log.Println("检测到退出信号，正在关闭服务...")
 	// 优雅关闭
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -73,7 +73,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("服务器强行关闭异常:", err)
 	}
-	
+
 	close(LogChan)
 	wg.Wait()
 	log.Println("所有日志已安全入库。")

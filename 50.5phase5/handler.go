@@ -17,12 +17,12 @@ import (
 )
 
 var (
-	ErrSuccess        = (error)(nil) // 没错误
-	ErrRetryNextKey   = errors.New("试试下一个key")
-	ErrRetryNextModel = errors.New("试试下一个厂家")
+	ErrSuccess        = (error)(nil) // no error
+	ErrRetryNextKey   = errors.New("try next KEY")
+	ErrRetryNextModel = errors.New("try next COMPANY")
 )
 
-// 拿到api尝试一次流式传输
+// get api and try a streaming session
 func tryStreamOnce(w http.ResponseWriter, req *http.Request, client http.Client, keypool *KeyPool) (*Usage, string, error) {
 	var finalUsage *Usage
 	var builder strings.Builder
@@ -33,10 +33,10 @@ func tryStreamOnce(w http.ResponseWriter, req *http.Request, client http.Client,
 	// 2.2.1
 	req.Header.Set("Authorization", apiKey)
 
-	// 2.3	发请求
+	// 2.3	send a request
 	resp, err := client.Do(req)
-	if err != nil { // 5秒超时到了，或者网络全断
-		log.Println("请求失败:", err)
+	if err != nil { // 5-sec timeout OR network disconnected
+		log.Println("Request fail:", err)
 		return nil, "", ErrRetryNextModel
 	}
 	defer resp.Body.Close()
@@ -71,16 +71,23 @@ func tryStreamOnce(w http.ResponseWriter, req *http.Request, client http.Client,
 		}
 
 		s := strings.TrimPrefix(line, "data:")
+		s = strings.TrimSpace(s)
 		if strings.Contains(s, "[DONE]") {
-			return finalUsage,builder.String(),ErrSuccess
+			return finalUsage, builder.String(), ErrSuccess
 		}
 
-		// 反序列化
-		var respData ChatResponse
+		// unmarshal response data
+		var respData OpenAIStreamResponse
 		err := json.Unmarshal([]byte(s), &respData)
 		if err != nil {
 			log.Println("解析响应json失败:", err)
-			fmt.Fprintf(w, "event: error\ndata: 解析响应失败\n\n")
+			errMsg := OpenAIErrorMsg{}
+			errMsg.Error.Message = "解析相应失败"
+			errMsg.Error.Type = "gateway_error"
+			errMsg.Error.Code = "internal_parse_error"
+			errBytes, _ := json.Marshal(errMsg)
+			fmt.Fprintf(w, "data: %s\n\n", string(errBytes))
+			fmt.Fprintf(w, "data: [DONE]\n\n")
 			flusher.Flush()
 			return nil, "", ErrSuccess
 		}
@@ -91,14 +98,20 @@ func tryStreamOnce(w http.ResponseWriter, req *http.Request, client http.Client,
 		}
 
 		if len(respData.Choices) > 0 { // 防直接panic
-			io.WriteString(w, respData.Choices[0].Delta.Content)
+			io.WriteString(w, "data: %s"+line+"\n\n")
 			builder.WriteString(respData.Choices[0].Delta.Content)
 			flusher.Flush()
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Println("读取响应流失败:", err)
-		fmt.Fprintf(w, "event: error\ndata: 读取响应流失败\n\n")
+		errMsg := OpenAIErrorMsg{}
+		errMsg.Error.Message = "读取响应流失败"
+		errMsg.Error.Type = "gateway_error"
+		errMsg.Error.Code = "internal_scanner_error"
+		errBytes, _ := json.Marshal(errMsg)
+		fmt.Fprintf(w, "data: %s\n\n", string(errBytes))
+		fmt.Fprintf(w, "data: [DONE]\n\n")
 		flusher.Flush()
 
 		// TODO(neroji): 处理流式响应中途异常断开的计费兜底。
@@ -130,6 +143,30 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 			return
 		}
 		reqData.Stream = true
+
+		// -search Redis
+		historyStr, err := json.Marshal(reqData.Messages)
+		if err != nil {
+			log.Printf("Marshal messages error:%s", err)
+			c.JSON(400, gin.H{"error": "incorrect parameters!"})
+		}
+		str, hit := getExactCache(c.Request.Context(), string(historyStr))
+		if hit {
+			flusher, ok := c.Writer.(http.Flusher)
+			if !ok {
+				log.Println("not supported SSE format")
+				http.Error(c.Writer, "not supported SSE format", 500)
+				return
+			}
+
+			for _, CacheContent := range str {
+				fmt.Fprintf(c.Writer, "data: %s\n\n", string(CacheContent))
+				flusher.Flush()
+			}
+
+			log.Println("HIT cache")
+			return
+		}
 
 		// -强制要求厂家在流式下返回 Token 消耗
 		reqData.StreamOptions = &StreamOptions{IncludeUsage: true}
@@ -185,7 +222,7 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 
 				// 4.0计时
 				startTime := time.Now()
-				usage, _, status := tryStreamOnce(c.Writer, req, client, currentProvider.Pool)
+				usage, str, status := tryStreamOnce(c.Writer, req, client, currentProvider.Pool)
 				latancy := time.Since(startTime)
 
 				// 4.1.1
@@ -207,6 +244,12 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 				// -case1
 				case ErrSuccess:
 					log.Println("请求成功!")
+
+					// set redis
+					if strings.TrimSpace(str) != "" {
+						setExactCache(c.Request.Context(), string(historyStr), str)
+						log.Println("successfully set redis")
+					}
 
 					// 计费、写日志 并且 更新数据库
 					logEntry.StatusCode = 200 // TODO(neroji):计费没成功没区分开

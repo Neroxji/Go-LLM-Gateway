@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -49,4 +50,20 @@ func getExactCache(ctx context.Context, prompt string) (string, bool) {
 		return "", false
 	}
 	return str, true
+}
+
+// set content to cache
+func setExactCache(ctx context.Context, prompt string, content string) {
+
+	// 1 transfer to hex
+	hash := md5.Sum([]byte(prompt))
+	md5str := hex.EncodeToString(hash[:])
+	key := fmt.Sprintf("cache:exact:%s", md5str)
+
+	// 2
+	err:=RDB.Set(ctx, key, content, 1*time.Hour).Err()
+	if err!=nil{
+		log.Printf("redis set error:%s",err)
+		return
+	}
 }

@@ -1,15 +1,60 @@
 用md5的原因
 快（性能）：
-
 Redis 查找 32 字节的 Key 远比查找 2KB（长文本）的 Key 快得多。
 减少了网关和 Redis 之间传输大数据量 Key 的网络开销。
 省（空间）：
-
 无论用户的问题是一句话还是一个万字长文，在 Redis 索引里都只占固定长度空间，极大地节省了昂贵的 Redis 内存。
 稳（安全可靠）：
-
 规避非法字符：用户输入可能包含换行、空格、Emoji 或特殊控制符，直接做 Key 极易引发 Redis 协议解析错误。MD5 后的 Hex 字符串只有 0-9 和 a-f，绝对安全。
 长度可控：防止用户恶意通过超长文本作为 Key 来撑爆你的内存或触发单行处理瓶颈。
 
 md5.Sum(...): 这是核心。它把任意长度的字节流，经过数学运算，压缩成一个固定长度为 16 的字节数组 [16]byte。
 md5str := hex.EncodeToString(hash[:]) 它的作用是把这 16 个字节，转成我们熟悉的 32 位 16 进制字符串（比如 d41d8cd98f00b204e9800998ecf8427e）
+
+
+
+
+Go 语言中 io.WriteString 与 fmt.Fprintf 的区别总结
+
+1. io.WriteString
+- 定位：高效、基础的字符串写入工具。
+- 逻辑：直接将字符串写入 io.Writer。如果目标对象实现了 WriteString 方法（如 os.File, bytes.Buffer），则直接调用，避免 string 到 []byte 的内存转换开销。
+- 优点：性能极高，内存分配极少。
+- 缺点：功能单一，不支持格式化，只能写入原样字符串。
+- 适用场景：高性能需求、写入纯字符串、已知内容的拼接。
+
+2. fmt.Fprintf
+- 定位：功能强大的格式化输出工具。
+- 逻辑：解析格式化字符串（如 %d, %v），通过反射（Reflection）处理参数，转换为字符串后写入。
+- 优点：非常灵活，支持多种数据类型混合写入，支持对齐、精度控制等。
+- 缺点：性能较慢（解析+反射），内存开销较大（接口装箱+可能的堆分配）。
+- 适用场景：复杂的日志记录、构造含变量的动态消息、代码可读性要求高的非性能核心路径。
+
+3. 快速对比
+| 特性          | io.WriteString             | fmt.Fprintf                |
+| :------------ | :------------------------- | :------------------------- |
+| 性能          | 极高 (原生/接近底层)        | 较低 (涉及反射和解析)        |
+| 灵活性        | 低 (仅限字符串)             | 高 (支持所有 Go 类型)        |
+| 典型用法      | io.WriteString(w, "msg")   | fmt.Fprintf(w, "%s: %d", s, i)|
+| 内存优化      | 自动检测 WriteString 接口    | 参数会逃逸到堆，解析有开销    |
+
+4. 最佳实践建议
+- 如果只是写入一个现成的字符串，优先使用 io.WriteString。
+- 如果需要拼接多个变量或进行格式控制，使用 fmt.Fprintf。
+- 在高性能循环或热点代码路径中，尽量避免使用 fmt.Fprintf。
+
+
+
+
+curl -X POST http://localhost:8080/api/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-token-here" \
+  -d '{
+    "model": "deepseek-chat",
+    "messages": [{"role": "user", "content": "你好"}],
+    "stream": true
+  }' --no-buffer
+
+
+
+
