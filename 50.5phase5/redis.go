@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -32,14 +33,22 @@ func initRedis() {
 }
 
 // get content from cache
-func getExactCache(ctx context.Context, prompt string) (string, bool) {
+func getExactCache(ctx context.Context, req ChatRequest) (string, bool) {
 
-	// 1	tranfer to hex
-	hash := md5.Sum([]byte(prompt))
+	// 1
+	msgBytes, err := json.Marshal(req.Messages)
+	if err != nil {
+		log.Printf("Marshal messages error:%s", err)
+		return "", false
+	}
+	rawContent := fmt.Sprintf("%s|%f|%f|%s", req.Model, req.GetTemperature(), req.GetTopP(), string(msgBytes))
+
+	// 2	tranfer to hex
+	hash := md5.Sum([]byte(rawContent))
 	md5str := hex.EncodeToString(hash[:])
 	key := fmt.Sprintf("cache:exact:%s", md5str)
 
-	// 2
+	// 3
 	str, err := RDB.Get(ctx, key).Result()
 	if err == redis.Nil {
 		log.Println("No cache info!")
@@ -53,17 +62,25 @@ func getExactCache(ctx context.Context, prompt string) (string, bool) {
 }
 
 // set content to cache
-func setExactCache(ctx context.Context, prompt string, content string) {
+func setExactCache(ctx context.Context, req ChatRequest, content string) {
 
-	// 1 transfer to hex
-	hash := md5.Sum([]byte(prompt))
+	// 1
+	msgBytes, err := json.Marshal(req.Messages)
+	if err != nil {
+		log.Printf("Marshal messages error:%s", err)
+		return
+	}
+	rawContent := fmt.Sprintf("%s|%f|%f|%s", req.Model, req.GetTemperature(), req.GetTopP(), string(msgBytes))
+
+	// 2 transfer to hex
+	hash := md5.Sum([]byte(rawContent))
 	md5str := hex.EncodeToString(hash[:])
 	key := fmt.Sprintf("cache:exact:%s", md5str)
 
-	// 2
-	err:=RDB.Set(ctx, key, content, 1*time.Hour).Err()
-	if err!=nil{
-		log.Printf("redis set error:%s",err)
+	// 3
+	err = RDB.Set(ctx, key, content, 1*time.Hour).Err()
+	if err != nil {
+		log.Printf("redis set error:%s", err)
 		return
 	}
 }

@@ -46,15 +46,34 @@ Go 语言中 io.WriteString 与 fmt.Fprintf 的区别总结
 
 
 
-curl -X POST http://localhost:8080/api/chat \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-your-token-here" \
-  -d '{
-    "model": "deepseek-chat",
-    "messages": [{"role": "user", "content": "你好"}],
-    "stream": true
-  }' --no-buffer
+LLM ChatRequest 核心参数说明
+
+1. Temperature (采样温度)
+   - 作用：控制生成结果的随机性和创造性。
+   - 范围：0.0 ~ 2.0。
+   - 低值 (如 0.2)：结果更聚焦、确定、一致。适合逻辑推理、代码编写。
+   - 高值 (如 0.8)：结果更随机、有创意、多样化。适合创作、头脑风暴。
+   - 架构提示：对于缓存系统，建议在 Key 中包含此参数，或仅对低 Temperature 请求进行缓存。
+
+2. TopP (核采样/累计概率采样)
+   - 作用：另一种控制随机性的方式。模型只从累积概率超过 P 的候选词中采样。
+   - 建议：通常与 Temperature 二选一使用，不要同时调整。
+
+3. MaxTokens (最大生成长度)
+   - 作用：限制模型单次回复的最大 Token 数量。
+   - 架构提示：网关层的“防火墙”。必须设置此值以防止恶意用户消耗过多额度（Token = 钱）。
+
+4. PresencePenalty (存在惩罚)
+   - 作用：惩罚已经出现过的词，鼓励模型谈论新话题。
+   - 范围：-2.0 ~ 2.0。
+   - 效果：正值越高，模型越不容易说重复的话（防止复读机现象）。
 
 
 
 
+JSON 里包含了下面这 5 个核心骨架，对于 99% 的前端（包括 Next-Web 和 OpenClaw）来说，就已经做到了“完全透明”：
+"id": 随便编一个，比如 "chatcmpl-cache"。
+"object": 必须是 "chat.completion.chunk"。
+"created": 一个时间戳。
+"model": 请求的模型名字。
+"choices": 包含 delta.content 或 finish_reason。
