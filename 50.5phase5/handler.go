@@ -138,6 +138,19 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 		user := c.MustGet("currentUser").(User)
 		token := c.MustGet("currentToken").(Token)
 
+		// global ratelimiting
+		ok, err := checkRateLimit(c.Request.Context(), user.ID)
+		if err != nil {
+			log.Println(err)
+			c.JSON(500, gin.H{"error": "Redis ratelimiting script fail"})
+			return
+		}
+		if !ok {
+			log.Println("ratelimiting successfully")
+			c.JSON(429, gin.H{"error": "too many request! please try againg for a few seconds"})
+			return
+		}
+
 		// - SSE 三要素：声明流、禁缓存、保连接
 		c.Header("Content-Type", "text/event-stream;charset=utf-8")
 		c.Header("Cache-Control", "no-cache")
@@ -145,7 +158,7 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 
 		// 1	解析请求体
 		var reqData ChatRequest
-		err := c.ShouldBindJSON(&reqData)
+		err = c.ShouldBindJSON(&reqData)
 		if err != nil {
 			log.Println("解码json失败", err)
 			c.JSON(400, gin.H{"error": "前端参数不对"})
@@ -154,7 +167,7 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 		reqData.Stream = true
 
 		// -search Redis
-		str, hit := getExactCache(c.Request.Context(), reqData)
+		str, hit := getContentCache(c.Request.Context(), reqData)
 		if hit {
 			flusher, ok := c.Writer.(http.Flusher)
 			if !ok {
@@ -206,8 +219,6 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 			fmt.Fprintf(c.Writer, "data: [DONE]\n\n")
 			flusher.Flush()
 
-			log.Println("HIT Cache")
-
 			// -send requestlog
 			logEntry := RequestLog{
 				UserID:      user.ID,
@@ -229,6 +240,7 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 		reqData.StreamOptions = &StreamOptions{IncludeUsage: true}
 
 		// 2	找到容灾链
+		UserModel := reqData.Model // -ensure Cache consistency
 		requestModel := reqData.Model
 		chain, ok := config.Fallbacks[requestModel]
 		if !ok {
@@ -293,9 +305,10 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 					log.Println("请求成功!")
 
 					// -set redis
+					reqData.Model = UserModel
 					if strings.TrimSpace(str) != "" {
-						setExactCache(c.Request.Context(), reqData, str)
-						log.Println("successfully set redis")
+						setContentCache(c.Request.Context(), reqData, str)
+						log.Println("successfully set Content redis")
 					}
 
 					// -计费、写日志 并且 更新数据库
