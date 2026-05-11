@@ -44,7 +44,6 @@ func AuthMiddleware() gin.HandlerFunc {
 				return
 			}
 			setTokenCache(c.Request.Context(), apiKey, token)
-			log.Println("successfully set Token redis")
 		}
 
 		// 2.1	user鉴权
@@ -56,7 +55,6 @@ func AuthMiddleware() gin.HandlerFunc {
 				return
 			}
 			setUserCache(c.Request.Context(), token.UserID, user)
-			log.Println("successfully set User redis")
 		}
 		if user.Status == 0 {
 			c.AbortWithStatusJSON(403, gin.H{"error": "用户被封禁!"})
@@ -70,7 +68,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 3
 		c.Set("currentToken", token)
 		c.Set("currentUser", user)
-		log.Println("store in user,token")
+		log.Println("store user,token")
 
 		c.Next()
 

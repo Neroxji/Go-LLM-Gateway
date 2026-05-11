@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"math/rand"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -79,11 +80,16 @@ func setContentCache(ctx context.Context, req ChatRequest, content string) {
 	key := fmt.Sprintf("cache:content:%s", md5str)
 
 	// 3
-	err = RDB.Set(ctx, key, content, 1*time.Hour).Err()
+	jitter:=time.Duration(rand.Intn(10))*time.Minute
+	ttl:=1*time.Hour+jitter
+
+	// 4
+	err = RDB.Set(ctx, key, content, ttl).Err()
 	if err != nil {
 		log.Printf("content redis set error:%s", err)
 		return
 	}
+	log.Println("successfully set Content redis")
 }
 
 // get Token
@@ -132,11 +138,16 @@ func setTokenCache(ctx context.Context, apiKey string, token Token) {
 	}
 
 	// 3
-	err = RDB.Set(ctx, key, tokenBytes, 5*time.Minute).Err()
+	jitter:=time.Duration(rand.Intn(60))*time.Second
+	ttl:=5*time.Minute+jitter
+
+	// 4
+	err = RDB.Set(ctx, key, tokenBytes, ttl).Err()
 	if err != nil {
 		log.Printf("token redis set error:%s", err)
 		return
 	}
+	log.Printf("successfully set Token redis. apikey:%s",apiKey)
 }
 
 // delete Token
@@ -197,11 +208,16 @@ func setUserCache(ctx context.Context, ID uint, user User) {
 	}
 
 	// 3
-	err = RDB.Set(ctx, key, userBytes, 5*time.Minute).Err()
+	jitter:=time.Duration(rand.Intn(60))*time.Second
+	ttl:=5*time.Minute+jitter
+
+	// 4
+	err = RDB.Set(ctx, key, userBytes, ttl).Err()
 	if err != nil {
 		log.Printf("user redis set error:%s", err)
 		return
 	}
+	log.Printf("successfully set User redis. ID:%d", ID)
 }
 
 // delete User
@@ -216,6 +232,7 @@ func deleteUserCache(ctx context.Context, ID uint) {
 		log.Printf("user redis delete error:%s", err)
 		return
 	}
+	log.Printf("delete user successfully! id:%d", ID)
 }
 
 // rateLimit lua script

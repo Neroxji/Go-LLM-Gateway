@@ -308,7 +308,6 @@ func apiChatHandler(config *Config) gin.HandlerFunc {
 					reqData.Model = UserModel
 					if strings.TrimSpace(str) != "" {
 						setContentCache(c.Request.Context(), reqData, str)
-						log.Println("successfully set Content redis")
 					}
 
 					// -计费、写日志 并且 更新数据库

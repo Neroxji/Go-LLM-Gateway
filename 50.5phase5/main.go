@@ -46,10 +46,18 @@ func main() {
 
 	// 挂载中间件
 	r.Use(CorsMiddleware())
-	r.Use(AuthMiddleware())
 
 	// 注册路由
-	r.POST("/api/chat", apiChatHandler(config))
+	v1Group:=r.Group("/api/v1")
+	v1Group.Use(AuthMiddleware())
+	{
+		v1Group.POST("/chat", apiChatHandler(config))
+	}
+	adminGroup := r.Group("/admin")
+	// -TODO: adminGroup.Use(AdminAuthMiddleware())
+	{
+		adminGroup.DELETE("/users/:id", DeleteUserHandler())
+	}
 
 	// 启动服务
 	srv := &http.Server{
