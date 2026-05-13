@@ -4,7 +4,11 @@
 
 ---
 ## 📚最终的核心路由架构图
+<<<<<<< HEAD
 <!-- ![alt text](<ChatGPT Image 2026年5月13日 23_33_36.png>) -->
+=======
+![alt text](<ChatGPT Image 2026年5月13日 23_33_36.png>)
+>>>>>>> 865388241fde8b604a825d75efdcab680f5ca606
 ---
 
 ## 🚀 核心性能指标 (Benchmarks)
@@ -16,7 +20,11 @@
 <details>
   <summary>🔍 点击查看 QPS & 延迟测试截图</summary>
   <br>
+<<<<<<< HEAD
   <!-- <img src="截屏2026-05-13 17.43.39.png" alt="Benchmark QPS" width="100%"> -->
+=======
+  <img src="截屏2026-05-13 17.43.39.png" alt="Benchmark QPS" width="100%">
+>>>>>>> 865388241fde8b604a825d75efdcab680f5ca606
 </details>                          
 <p></p> 
 
@@ -25,7 +33,11 @@
 <details>
   <summary>🛡️ 点击查看限流拦截效果图</summary>
   <br>
+<<<<<<< HEAD
   <!-- <img src="截屏2026-05-13 20.39.39.png" alt="Rate Limiting Response" width="100%"> -->
+=======
+  <img src="截屏2026-05-13 20.39.39.png" alt="Rate Limiting Response" width="100%">
+>>>>>>> 865388241fde8b604a825d75efdcab680f5ca606
 </details>
 
 
@@ -61,3 +73,14 @@
 * **框架**: Gin, GORM 
 * **存储**: MySQL (索引/锁优化), Redis (Lua 脚本/缓存策略) 
 * **协议**: HTTP/SSE, TCP/IP 
+<<<<<<< HEAD
+=======
+
+---
+
+## ✉️ 联系方式
+* **姓名**: 陈振丰 (Chen Zhenfeng) 
+* **学校**: 广州大学 - 网络工程(本科) 
+* **Email**: neroji91@gmail.com 
+* **Phone**: 13715534079 
+>>>>>>> 865388241fde8b604a825d75efdcab680f5ca606
