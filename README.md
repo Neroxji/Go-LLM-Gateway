@@ -163,9 +163,9 @@ Content-Type: application/json
 <details>
   <summary>📸 点击查看创建用户测试截图</summary>
   <br>
-  <img src="截屏2026-05-18 15.18.37.png" alt="Create User Test 1" width="100%">
+  <img src="assets/postman_create_user.png" alt="Create User Postman" width="100%">
   <br><br>
-  <img src="截屏2026-05-18 15.23.47.png" alt="Create User Test 2" width="100%">
+  <img src="assets/dbeaver_create_user.png" alt="Create User DB" width="100%">
 </details>
 
 ---
@@ -197,9 +197,9 @@ Content-Type: application/json
 <details>
   <summary>🔑 点击查看创建 Token 测试截图</summary>
   <br>
-  <img src="截屏2026-05-18 15.18.57.png" alt="Create Token Test" width="100%">
+  <img src="assets/postman_create_token.png" alt="Create Token Postman" width="100%">
   <br><br>
-  <img src="截屏2026-05-18 15.23.58.png" alt="Create Token Test" width="100%">
+  <img src="assets/dbeaver_create_token.png" alt="Create Token DB" width="100%">
 </details>
 
 ---
@@ -228,7 +228,7 @@ Content-Type: application/json
 <details>
   <summary>💬 点击查看对话请求（SSE流式）测试截图</summary>
   <br>
-  <img src="截屏2026-05-18 15.17.08.png" alt="Chat SSE Test" width="100%">
+  <img src="assets/postman_chat_sse.png" alt="Chat SSE Postman" width="100%">
 </details>
 
 
