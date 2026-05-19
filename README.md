@@ -1,7 +1,16 @@
-# Go-LLM-Gateway (高性能大模型 API 网关)
+# Nerox-Gateway (高性能大模型 API 网关)
 
-本项目是我在大二期间为了深入学习 **Go 并发编程**与**高性能后端架构**而开发的实战项目 。它不仅是一个支持 OpenAI 格式的统一代理网关，更完整记录了我从“同步阻塞”到“异步高性能架构”的演进过程 。底下还有docker部署并且给api测试的简易教程。
+本项目是我在大二期间为了深入学习 **Go 并发编程**与**高性能后端架构**而开发的实战项目 。它不仅是一个支持 OpenAI 格式的统一代理网关，更完整记录了我从“同步阻塞”到“异步高性能架构”的演进过程 。底下还有Docker部署并且给API测试的简易教程。
 
+---
+
+## 💻 技术栈
+* **语言**: Go (Goroutine, Channel, Context) 
+* **框架**: Gin, GORM 
+* **存储**: MySQL (索引/锁优化), Redis (Lua 脚本/缓存策略) 
+* **协议**: HTTP/SSE, TCP/IP
+* **部署**: Docker, Docker Compose
+* **测试**: Postman
 ---
 ## 📚最终的核心路由架构图
 ![架构图](assets/architecture.png)
@@ -53,16 +62,6 @@
 * **防御机制**:
     * **防雪崩**: 结合随机时间抖动 (**Jitter**) 有效防止大规模缓存同时失效 。
     * **防刷量**: 编写并注入 **Redis Lua 脚本** 实现分布式限流，确保超高并发下的原子性操作 。
-
----
-
-## 💻 技术栈
-* **语言**: Go (Goroutine, Channel, Context) 
-* **框架**: Gin, GORM 
-* **存储**: MySQL (索引/锁优化), Redis (Lua 脚本/缓存策略) 
-* **协议**: HTTP/SSE, TCP/IP
-* **部署**: Docker, Docker Compose
-* **测试**: Postman
 
 ---
 
